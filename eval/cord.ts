@@ -8,7 +8,7 @@ import { readReceipt } from '../src/read.ts';
 import { amount } from '../src/receipt.ts';
 
 const DIR = '.data/cord';
-const OUT = 'out/eval-cord' + (process.argv.includes('--no-second-look') ? '-onelook' : '') + '.jsonl';
+const OUT = process.argv.includes('--out') ? process.argv[process.argv.indexOf('--out') + 1] : 'out/eval-cord.jsonl';
 const limit = Number(process.argv[process.argv.indexOf('--limit') + 1]) || 1000;
 mkdirSync('out', { recursive: true });
 const done = new Set(existsSync(OUT) ? readFileSync(OUT, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l).id) : []);
@@ -20,11 +20,11 @@ for (const id of ids) {
   if (want == null) continue;
   const img = join(DIR, `${id}.png`);
   try {
-    const r = await readReceipt(img, { secondLook: !process.argv.includes('--no-second-look') });
+    const r = await readReceipt(img);
     const got = amount(r.copied.total);
     const row = { id, want, got, right: got != null && Math.abs(got - want) < 0.5, ok: r.check.ok, looks: r.looks,
       seconds: r.seconds, tokens: r.tokens, issues: r.check.issues, agreed: r.check.agreed, merchant: r.copied.merchant,
-      items: r.copied.items.length, copied: r.copied };
+      items: r.copied.items.length, copied: r.copied, firstLook: r.firstLook, totalsLook: r.totalsLook };
     appendFileSync(OUT, JSON.stringify(row) + '\n');
     console.log(`${id} want ${want} got ${got} ${row.right ? 'RIGHT' : 'wrong'} ${r.check.ok ? 'agrees' : 'FLAGGED'} ${r.looks} look(s) ${r.seconds.toFixed(1)}s`);
   } catch (e) {

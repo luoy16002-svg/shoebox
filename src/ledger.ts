@@ -96,19 +96,40 @@ export function writeBooks(folder: string, month: string): { csv: string; html: 
   const currency = ok.find((e) => e.currency)?.currency ?? null;
   const byCat: Record<string, number> = {};
   for (const e of ok) byCat[e.category] = (byCat[e.category] ?? 0) + e.total;
-  const esc = (s: unknown) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]!));
-  const html = `<!doctype html><meta charset="utf-8"><title>Expenses ${month}</title>
-<style>body{font:15px/1.5 Georgia,serif;max-width:720px;margin:40px auto;padding:0 16px;color:#2a2622;background:#faf7f0}
-h1{font-weight:normal}table{border-collapse:collapse;width:100%}td,th{padding:4px 8px;border-bottom:1px solid #e3dccd;text-align:left}
-td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}.flag{color:#a0321e}</style>
-<h1>Expenses, ${month}</h1>
-<p>${ok.length} receipts filed, ${money(total, currency)} in all.${rows.length - ok.length ? ` <span class="flag">${rows.length - ok.length} waiting in “Check me”.</span>` : ''}</p>
-<table><tr><th>Category</th><th class="n">Total</th></tr>${Object.entries(byCat).sort((a, b) => b[1] - a[1])
-    .map(([k, v]) => `<tr><td>${esc(k)}</td><td class="n">${esc(money(v, currency))}</td></tr>`).join('')}</table>
-<h2>Receipts</h2><table><tr><th>Date</th><th>Shop</th><th>Category</th><th class="n">Total</th></tr>${ok
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .map((e) => `<tr><td>${esc(e.date)}</td><td>${esc(e.merchant)}</td><td>${esc(e.category)}</td><td class="n">${esc(money(e.total, e.currency))}</td></tr>`)
-    .join('')}</table>`;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
+  const waiting = rows.filter((e) => e.flagged);
+  const monthName = new Date(`${month}-15T12:00:00`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+  const html = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Expenses, ${esc(monthName)}</title>
+<style>
+:root{--paper:#f6f1e6;--ink:#2b2621;--faint:#8c8275;--rule:#d9cfbd;--red:#a3402a;--green:#3d6b4a}
+*{box-sizing:border-box}body{margin:0;background:#e9e2d3;color:var(--ink);font:16px/1.5 Georgia,"Times New Roman",serif}
+main{max-width:760px;margin:32px auto;padding:40px 48px 48px;background:var(--paper);
+  box-shadow:0 1px 0 #cfc5b3,0 18px 40px -24px rgba(60,45,25,.45)}
+h1{font-weight:normal;font-size:30px;margin:0 0 2px;letter-spacing:.01em}.sub{color:var(--faint);margin:0 0 28px;font-style:italic}
+.sum{display:flex;gap:40px;margin:0 0 30px;align-items:baseline;flex-wrap:wrap}.big{font-size:34px;font-variant-numeric:tabular-nums}
+.label{color:var(--faint);font-size:13px;letter-spacing:.08em;text-transform:uppercase;display:block}
+.wait{color:var(--red)}h2{font-weight:normal;font-size:19px;margin:30px 0 6px;border-bottom:2px solid var(--ink);padding-bottom:2px}
+table{border-collapse:collapse;width:100%}td{padding:5px 6px;border-bottom:1px solid var(--rule);vertical-align:top}
+td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}td.d{white-space:nowrap;color:var(--faint);width:7em}
+tr.total td{border-top:1px solid var(--ink);border-bottom:3px double var(--ink);font-weight:bold}
+.why{color:var(--red);font-size:14px}.tick{color:var(--green)}
+@media (max-width:600px){main{margin:0;padding:24px 16px}.big{font-size:26px}td.d{width:auto}}
+</style>
+<main>
+<h1>Expenses, ${esc(monthName)}</h1>
+<p class="sub">Filed by Shoebox overnight. Every total below was confirmed by other figures on its receipt.</p>
+<div class="sum"><div><span class="label">Spent</span><span class="big">${esc(money(total, currency))}</span></div>
+<div><span class="label">Receipts filed</span><span class="big">${ok.length}</span></div>
+${waiting.length ? `<div><span class="label">Waiting in “Check me”</span><span class="big wait">${waiting.length}</span></div>` : ''}</div>
+<h2>By category</h2>
+<table>${cats.map(([k, v]) => `<tr><td>${esc(k)}</td><td class="n">${esc(money(v, currency))}</td></tr>`).join('')}
+<tr class="total"><td>Total</td><td class="n">${esc(money(total, currency))}</td></tr></table>
+<h2>Receipts</h2>
+<table>${ok.sort((a, b) => a.date.localeCompare(b.date)).map((e) => `<tr><td class="d">${esc(e.date)}</td><td>${esc(e.merchant ?? 'Unnamed shop')}</td><td>${esc(e.category)}</td><td class="n">${esc(money(e.total, e.currency))}</td></tr>`).join('')}</table>
+${waiting.length ? `<h2>Waiting in “Check me”</h2><table>${waiting.map((e) => `<tr><td class="d">${esc(e.date)}</td><td>${esc(e.merchant ?? 'Unnamed shop')}<div class="why">${esc(e.issues.join('; '))}</div></td><td class="n">${esc(money(e.total, e.currency))}</td></tr>`).join('')}</table>` : ''}
+</main></html>`;
   const htmlPath = join(p.books, `summary-${month}.html`);
   writeFileSync(htmlPath, html);
   return { csv: csvPath, html: htmlPath, total, currency };

@@ -6,7 +6,7 @@
 // wins; a receipt that still disagrees is returned with its issues so it can be flagged rather than guessed.
 
 import sharp from 'sharp';
-import { check, COPY_SCHEMA, TOTALS_SCHEMA, type Check, type Copied } from './receipt.ts';
+import { COPY_SCHEMA, reconcile, TOTALS_SCHEMA, type Check, type Copied } from './receipt.ts';
 
 export const MODEL_URL = process.env.SHOEBOX_MODEL_URL ?? 'http://127.0.0.1:8181/v1';
 export const MODEL = process.env.SHOEBOX_MODEL ?? 'gemma-4-e4b';
@@ -26,7 +26,8 @@ with their separators (for example "60.000" or "12.50"): subtotal, discount, tax
 paid (cash or card tendered) and change. Use null for any line that is not printed. Never calculate.
 Answer with the JSON object only.`;
 
-export type Reading = { copied: Copied; check: Check; looks: number; seconds: number; tokens: number };
+export type Reading = { copied: Copied; check: Check; looks: number; seconds: number; tokens: number; firstLook?: Copied;
+  totalsLook?: Copied };
 
 async function prepare(file: string | Buffer, crop?: { top: number }): Promise<string> {
   let img = sharp(file).rotate();
@@ -90,27 +91,14 @@ function normalise(j: any): Copied {
   };
 }
 
-const score = (c: Check) => (c.ok ? 100 : 0) + c.agreed.length * 10 - c.issues.length;
-
-/** Read one receipt: a first look, and a closer look at the totals when the figures disagree. */
-export async function readReceipt(file: string | Buffer, opts: { secondLook?: boolean } = {}): Promise<Reading> {
+/** Read one receipt twice: the whole of it, then its totals block alone, enlarged; reconcile the two. */
+export async function readReceipt(file: string | Buffer): Promise<Reading> {
   const t0 = Date.now();
   const first = await ask(COPY_PROMPT, await prepare(file), COPY_SCHEMA);
-  let copied = normalise(first.json);
-  let result = check(copied);
-  let looks = 1;
-  let tokens = first.tokens;
-  if (!result.ok && opts.secondLook !== false) {
-    const second = await ask(TOTALS_PROMPT, await prepare(file, { top: 0.45 }), TOTALS_SCHEMA, 400);
-    looks = 2;
-    tokens += second.tokens;
-    const merged: Copied = { ...copied, ...normalise({ ...copied, ...second.json, items: copied.items }) };
-    merged.items = copied.items;
-    const c2 = check(merged);
-    if (score(c2) > score(result)) {
-      copied = merged;
-      result = c2;
-    }
-  }
-  return { copied, check: result, looks, seconds: (Date.now() - t0) / 1000, tokens };
+  const second = await ask(TOTALS_PROMPT, await prepare(file, { top: 0.45 }), TOTALS_SCHEMA, 400);
+  const firstLook = normalise(first.json);
+  const totalsLook = normalise({ ...second.json, items: [] });
+  const r = reconcile(firstLook, totalsLook);
+  return { copied: r.copied, check: r.check, looks: 2, seconds: (Date.now() - t0) / 1000, tokens: first.tokens + second.tokens,
+    firstLook, totalsLook };
 }

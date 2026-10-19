@@ -37,7 +37,7 @@ export function amount(text: string | null | undefined): number | null {
   let s = String(text).trim();
   if (!s) return null;
   const negative = /^\(.*\)$/.test(s) || /^-|-$/.test(s.replace(/[^\d.,()-]/g, ''));
-  s = s.replace(/[^\d.,]/g, '');
+  s = s.replace(/[^\d.,]/g, '').replace(/^[.,]+|[.,]+$/g, ''); // "Rp. 91,000": the dot after Rp is not a separator
   if (!/\d/.test(s)) return null;
   const dots = (s.match(/\./g) || []).length;
   const commas = (s.match(/,/g) || []).length;
@@ -105,8 +105,11 @@ export function check(r: Copied): Check {
     if (close(paid - change, total)) agreed.push(change ? 'paid - change = total' : 'paid = total');
     else issues.push(`paid ${fmt(paid)} minus change ${fmt(change)} is not the total ${fmt(total)}`);
   }
-  const confirmed = agreed.some((a) => a !== 'lines = subtotal');
-  return { ok: total != null && total > 0 && confirmed, agreed, issues };
+  // Cash handed over minus change is the strongest proof: two figures printed apart from the total, rarely misread
+  // into agreement. When it is printed it decides; otherwise the lines or the subtotal must confirm the total.
+  const cash = total != null && paid != null && paid > 0 ? (close(paid - change, total) ? 'agree' : 'disagree') : 'none';
+  const other = agreed.includes('subtotal = total') || agreed.includes('lines = total');
+  return { ok: total != null && total > 0 && (cash === 'agree' || (cash === 'none' && other)), agreed, issues };
 }
 
 export const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(2));
@@ -150,3 +153,34 @@ export const TOTALS_SCHEMA = {
   },
   required: ['subtotal', 'discount', 'tax', 'service', 'total', 'paid', 'change'],
 } as const;
+
+export const TOTAL_FIELDS = ['subtotal', 'discount', 'tax', 'service', 'total', 'paid', 'change'] as const;
+export type Totals = Pick<Copied, (typeof TOTAL_FIELDS)[number]>;
+
+const cashAgrees = (c: Check) => c.agreed.includes('paid - change = total') || c.agreed.includes('paid = total');
+
+/**
+ * Two independent readings of the same receipt: the whole receipt, and its totals block alone, enlarged. Like
+ * double entry, the total must come out the same both times. When it does, the readings are merged (a line one
+ * look missed is taken from the other) and the arithmetic decides as usual. When it does not, a reading is used only
+ * if cash and change confirm its total; otherwise the receipt goes to a human.
+ */
+export function reconcile(first: Copied, second: Totals): { copied: Copied; check: Check } {
+  const t1 = amount(first.total);
+  const t2 = amount(second.total);
+  if (t1 != null && t2 != null && close(t1, t2)) {
+    const merged: Copied = { ...first };
+    for (const k of TOTAL_FIELDS) if (merged[k] == null && second[k] != null) merged[k] = second[k];
+    const c = check(merged);
+    return { copied: merged, check: { ...c, agreed: ['read twice', ...c.agreed] } };
+  }
+  const alt: Copied = { ...first, ...second, items: first.items };
+  const c1 = check(first);
+  const c2 = check(alt);
+  const pick = cashAgrees(c1) && !cashAgrees(c2) ? 1 : cashAgrees(c2) && !cashAgrees(c1) ? 2 : 0;
+  const note = `the two readings of the total disagree (${t1 == null ? 'none' : fmt(t1)} and ${t2 == null ? 'none' : fmt(t2)})`;
+  if (pick === 1) return { copied: first, check: { ...c1, issues: [note + '; cash and change settled it', ...c1.issues] } };
+  if (pick === 2) return { copied: alt, check: { ...c2, issues: [note + '; cash and change settled it', ...c2.issues] } };
+  const base = c1.agreed.length >= c2.agreed.length ? { copied: first, c: c1 } : { copied: alt, c: c2 };
+  return { copied: base.copied, check: { ok: false, agreed: base.c.agreed, issues: [note, ...base.c.issues] } };
+}
