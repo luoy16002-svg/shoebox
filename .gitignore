@@ -1,0 +1,9 @@
+*.log
+.data/
+.models/
+.shoebox/
+.tools/
+art/*.faces.png
+art/*.review.png
+node_modules/
+out/

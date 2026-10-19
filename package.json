@@ -1,0 +1,33 @@
+{
+  "name": "shoebox",
+  "version": "0.1.0",
+  "description": "A shoebox for receipts that empties itself overnight: Gemma reads them on your own computer, Temporal keeps the night shift going, Mastra keeps the books.",
+  "type": "module",
+  "license": "MIT",
+  "author": "fuddle_yichi",
+  "bin": {
+    "shoebox": "bin/shoebox.mjs"
+  },
+  "scripts": {
+    "shoebox": "tsx src/cli.ts",
+    "test": "tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "@mastra/core": "1.78.0",
+    "@temporalio/activity": "1.24.0",
+    "@temporalio/client": "1.24.0",
+    "@temporalio/worker": "1.24.0",
+    "@temporalio/workflow": "1.24.0",
+    "sharp": "0.34.5",
+    "zod": "4.6.7"
+  }
+}

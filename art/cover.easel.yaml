@@ -1,0 +1,199 @@
+# DEV cover for Shoebox (1000x420): a cardboard shoebox at night, receipts spilling out, the moon outside.
+size: [1000, 420]
+paper: hot_press
+background: {top: "#1d2238", bottom: "#2f3554"}
+light: [0.45, 0.55, 0.7]
+style: {shading: cel, line: ink, line_px: 2.4, line_color: "#1a1626", shadow: "#8f86b0"}
+items:
+  - shape: moon
+    kind: circle
+    center: [880, 92]
+    radius: 44
+    color: "#f3e7c4"
+    shade: none
+    line: 0
+  - shape: desk
+    kind: rect
+    box: [-10, 330, 1010, 430]
+    color: "#6b4b3a"
+    shade: flat
+    line: 0.6
+  - shape: box back
+    kind: poly
+    points: [[600, 210], [900, 200], [935, 250], [640, 262]]
+    color: "#9a7452"
+    shade: flat
+  - shape: receipt a
+    kind: poly
+    points: [[650.0, 123.0], [659.0, 113.5], [668.0, 120.0], [677.0, 110.5], [686.0, 117.0], [695.0, 107.5], [704.0, 114.0], [713.0, 104.5], [722.0, 111.0], [744, 250], [668, 262]]
+    color: "#f7f3ea"
+    shade: flat
+    casts: true
+  - shape: receipt a row 0
+    kind: poly
+    points: [[663.2, 145.6], [716.0, 133.6], [716.0, 136.6], [663.2, 148.6]]
+    color: "#b9b2a6"
+    shade: none
+    line: 0
+  - shape: receipt a row 1
+    kind: poly
+    points: [[664.8, 158.1], [705.9, 146.1], [705.9, 149.1], [664.8, 161.1]]
+    color: "#b9b2a6"
+    shade: none
+    line: 0
+  - shape: receipt a row 2
+    kind: poly
+    points: [[666.4, 170.7], [719.9, 158.7], [719.9, 161.7], [666.4, 173.7]]
+    color: "#b9b2a6"
+    shade: none
+    line: 0
+  - shape: receipt a row 3
+    kind: poly
+    points: [[668.0, 183.3], [721.8, 171.3], [721.8, 174.3], [668.0, 186.3]]
+    color: "#b9b2a6"
+    shade: none
+    line: 0
+  - shape: receipt a row 4
+    kind: poly
+    points: [[669.6, 195.9], [711.8, 183.9], [711.8, 186.9], [669.6, 198.9]]
+    color: "#b9b2a6"
+    shade: none
+    line: 0
+  - shape: receipt a row 5
+    kind: poly
+    points: [[671.2, 208.4], [725.7, 196.4], [725.7, 199.4], [671.2, 211.4]]
+    color: "#b9b2a6"
+    shade: none
+    line: 0
+  - shape: receipt a row 6
+    kind: poly
+    points: [[672.8, 221.0], [727.7, 209.0], [727.7, 212.0], [672.8, 224.0]]
+    color: "#b9b2a6"
+    shade: none
+    line: 0
+  - shape: receipt b
+    kind: poly
+    points: [[735.0, 99.0], [743.1, 92.0], [751.2, 101.0], [759.4, 94.0], [767.5, 103.0], [775.6, 96.0], [783.8, 105.0], [791.9, 98.0], [800.0, 107.0], [790, 250], [722, 244]]
+    color: "#efe9dc"
+    shade: flat
+    casts: true
+  - shape: receipt b row 0
+    kind: poly
+    points: [[742.7, 122.6], [788.2, 130.3], [788.2, 133.3], [742.7, 125.6]]
+    color: "#b9b2a6"
+    shade: none
+    line: 0
+  - shape: receipt b row 1
+    kind: poly
+    points: [[741.7, 134.1], [775.4, 141.6], [775.4, 144.6], [741.7, 137.1]]
+    color: "#b9b2a6"
+    shade: none
+    line: 0
+  - shape: receipt b row 2
+    kind: poly
+    points: [[740.6, 145.6], [786.6, 152.9], [786.6, 155.9], [740.6, 148.6]]
+    color: "#b9b2a6"
+    shade: none
+    line: 0
+  - shape: receipt b row 3
+    kind: poly
+    points: [[739.6, 157.1], [785.9, 164.2], [785.9, 167.2], [739.6, 160.1]]
+    color: "#b9b2a6"
+    shade: none
+    line: 0
+  - shape: receipt b row 4
+    kind: poly
+    points: [[738.6, 168.5], [773.1, 175.5], [773.1, 178.5], [738.6, 171.5]]
+    color: "#b9b2a6"
+    shade: none
+    line: 0
+  - shape: receipt b row 5
+    kind: poly
+    points: [[737.6, 180.0], [784.3, 186.9], [784.3, 189.9], [737.6, 183.0]]
+    color: "#b9b2a6"
+    shade: none
+    line: 0
+  - shape: receipt b row 6
+    kind: poly
+    points: [[736.6, 191.5], [783.5, 198.2], [783.5, 201.2], [736.6, 194.5]]
+    color: "#b9b2a6"
+    shade: none
+    line: 0
+  - shape: receipt b row 7
+    kind: poly
+    points: [[735.6, 202.9], [770.8, 209.5], [770.8, 212.5], [735.6, 205.9]]
+    color: "#b9b2a6"
+    shade: none
+    line: 0
+  - shape: receipt c
+    kind: poly
+    points: [[805.0, 135.0], [813.4, 129.2], [821.8, 139.5], [830.1, 133.8], [838.5, 144.0], [846.9, 138.2], [855.2, 148.5], [863.6, 142.8], [872.0, 153.0], [840, 262], [778, 246]]
+    color: "#f4efe3"
+    shade: flat
+    casts: true
+  - shape: receipt c row 0
+    kind: poly
+    points: [[810.1, 152.5], [856.2, 170.2], [856.2, 173.2], [810.1, 155.5]]
+    color: "#b9b2a6"
+    shade: none
+    line: 0
+  - shape: receipt c row 1
+    kind: poly
+    points: [[807.4, 164.3], [840.9, 181.7], [840.9, 184.7], [807.4, 167.3]]
+    color: "#b9b2a6"
+    shade: none
+    line: 0
+  - shape: receipt c row 2
+    kind: poly
+    points: [[804.6, 176.1], [849.6, 193.3], [849.6, 196.3], [804.6, 179.1]]
+    color: "#b9b2a6"
+    shade: none
+    line: 0
+  - shape: receipt c row 3
+    kind: poly
+    points: [[801.8, 187.9], [846.3, 204.9], [846.3, 207.9], [801.8, 190.9]]
+    color: "#b9b2a6"
+    shade: none
+    line: 0
+  - shape: receipt c row 4
+    kind: poly
+    points: [[799.0, 199.6], [831.0, 216.5], [831.0, 219.5], [799.0, 202.6]]
+    color: "#b9b2a6"
+    shade: none
+    line: 0
+  - shape: receipt c row 5
+    kind: poly
+    points: [[796.2, 211.4], [839.7, 228.0], [839.7, 231.0], [796.2, 214.4]]
+    color: "#b9b2a6"
+    shade: none
+    line: 0
+  - shape: box front
+    kind: poly
+    points: [[630, 252], [945, 240], [930, 352], [640, 362]]
+    color: "#b88b5e"
+    threshold: 0.3
+  - shape: box lid
+    kind: poly
+    points: [[560, 300], [620, 262], [645, 360], [585, 380]]
+    color: "#a67c54"
+    shade: flat
+  - shape: label
+    kind: rect
+    box: [740, 282, 840, 322]
+    color: "#efe6d2"
+    shade: none
+    line: 0.6
+  - text: title
+    string: "Shoebox"
+    at: [64, 150]
+    size: 92
+    font: serif-bold
+    color: "#f3e7c4"
+    anchor: ls
+  - text: line
+    string: "Receipts in, books out.\nRead overnight by Gemma,\non your own computer."
+    at: [68, 210]
+    size: 27
+    font: serif-italic
+    color: "#d9d4e8"
+    leading: 1.35
