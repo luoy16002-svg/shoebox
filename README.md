@@ -74,7 +74,7 @@ The Temporal web UI (http://localhost:8233) shows every shift, every receipt and
 
 - **Gemma 4 E4B** (Apache 2.0) reads the photos (twice) through llama.cpp's server, with a JSON schema turned into a
   grammar so the answer always parses. Thinking is turned off: copying a receipt needs eyes, not deliberation, and it is
-  three times faster without.
+  five times faster without.
 - **Temporal** runs the night shift: a scheduled `nightShift` workflow starts one child workflow per receipt; reading
   is an activity that heartbeats every ten seconds while the model works, so a dead worker is noticed within a minute
   and the read is retried; filing checks the ledger first, so a retry never files a receipt twice.
