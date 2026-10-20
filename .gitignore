@@ -8,3 +8,4 @@ art/*.review.png
 node_modules/
 out/
 post/
+STATUS.md
