@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { amount, check, reconcile, type Copied } from '../src/receipt.ts';
+import { amount, check, currencyOf, reconcile, type Copied } from '../src/receipt.ts';
 
 test('amounts as printed become numbers', () => {
   assert.equal(amount('60.000'), 60000);
@@ -93,4 +93,18 @@ test('when the readings disagree, cash and change can settle it', () => {
   assert.equal(r.check.ok, true);
   assert.equal(amount(r.copied.total), 68000);
   assert.match(r.check.issues[0], /settled/);
+});
+
+test('the currency comes from the signs printed beside the amounts', () => {
+  assert.equal(currencyOf({ ...base, currency: null, total: 'Rp. 91,000' }), 'IDR');
+  assert.equal(currencyOf({ ...base, currency: null, total: '$12.50' }), 'USD');
+  assert.equal(currencyOf({ ...base, currency: null, total: '12,50 €' }), 'EUR');
+  assert.equal(currencyOf({ ...base, currency: 'GBP', total: '4.20' }), 'GBP');
+  assert.equal(currencyOf({ ...base, currency: null, total: '60.000' }), null);
+});
+
+test('a total only one look could read stands only on cash and change', () => {
+  const first: Copied = { ...base, items: [{ name: 'BAKSO', qty: '1', amount: '15.000' }], total: null, paid: '30.000', change: '9.000' };
+  assert.equal(reconcile(first, { ...noTotals, total: '21.000', paid: '30.000', change: '9.000' }).check.ok, true);
+  assert.equal(reconcile({ ...first, paid: null, change: null }, { ...noTotals, total: '21.000' }).check.ok, false);
 });

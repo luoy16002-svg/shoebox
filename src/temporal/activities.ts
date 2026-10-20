@@ -6,7 +6,7 @@ import { basename, extname, join } from 'node:path';
 import { categorize as clerk } from '../agents.ts';
 import { addToLedger, ensure, inboxFiles, loadLedger, receiptDate, safeName, uniquePath, writeBooks } from '../ledger.ts';
 import { readReceipt, type Reading } from '../read.ts';
-import { amount, type Copied } from '../receipt.ts';
+import { amount, currencyOf, type Copied } from '../receipt.ts';
 
 export type Filed = { file: string; filedAs: string; flagged: boolean; total: number | null; category: string };
 
@@ -56,7 +56,7 @@ export async function fileIt(folder: string, file: string, reading: Reading, cat
       `The figures on this receipt did not agree, so it was not filed:\n- ${reading.check.issues.join('\n- ')}\n\n` +
       'Retake the photo (flat, the whole receipt, the totals sharp), or file it by hand.\n');
   }
-  addToLedger(folder, { source: basename(file), filedAs: target, date, merchant: c.merchant, currency: c.currency,
+  addToLedger(folder, { source: basename(file), filedAs: target, date, merchant: c.merchant, currency: currencyOf(c) ?? (process.env.SHOEBOX_CURRENCY || null),
     total: total ?? 0, category, flagged, issues: reading.check.issues, lines: c.items.length, readAt: new Date().toISOString() });
   return { file, filedAs: target, flagged, total, category };
 }

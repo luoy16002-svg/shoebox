@@ -8,8 +8,8 @@ arithmetic, files it by month and category with a sensible name, and writes the 
 there is a two-line note:
 
 ```
-Filed 12 receipts overnight; 1 would not add up and waits in “Check me”.
-This month so far: IDR 1,284,500 (Books/expenses-2026-10.csv).
+Filed 7 receipts overnight; 3 would not add up and wait in “Check me”.
+This month so far: 756,127 (Books/expenses-2026-10.csv).
 ```
 
 Nothing is uploaded anywhere. The model runs locally, the night shift survives the laptop sleeping or the process
@@ -17,8 +17,8 @@ being killed halfway (it is a [Temporal](https://temporal.io) workflow), and you
 words:
 
 ```
-$ shoebox ask "how much did I spend on food and drink this month?"
-Food & drink came to IDR 412,000 across 9 receipts in October.
+$ shoebox ask "How much did I spend on food and drink this month, and what is waiting for me to check?"
+In October 2026, you spent 724,627 on Food & drink. Three receipts are waiting for you to check, with reasons provided for each one.
 ```
 
 ## How it decides what to believe

@@ -37,7 +37,8 @@ export async function nightShift(input: ShiftInput): Promise<ShiftResult> {
     try {
       const r = await executeChild(fileReceipt, {
         args: [{ folder: input.folder, file }],
-        workflowId: `${workflowInfo().workflowId}/${file.split(/[\\/]/).pop()}`,
+        // the file's name after the shift's id, joined without a slash so the web UI can open it
+        workflowId: `${workflowInfo().workflowId}--${file.split(/[\\/]/).pop()}`,
       });
       if (r.flagged) flagged++;
       else filed++;

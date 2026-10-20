@@ -28,7 +28,7 @@ const filed = rows.filter((r) => r.ok);
 const filedWrong = filed.filter((r) => !r.right);
 const flagged = rows.filter((r) => !r.ok);
 const flaggedRight = flagged.filter((r) => r.right);
-const second = rows.filter((r) => r.looks > 1).length;
+const twice = rows.filter((r) => r.agreed.includes('read twice')).length;
 const secs = rows.map((r) => r.seconds).sort((a, b) => a - b);
 const median = secs[Math.floor(secs.length / 2)] ?? 0;
 const mean = secs.reduce((a, b) => a + b, 0) / Math.max(n, 1);
@@ -38,7 +38,7 @@ const md = `# Shoebox on the CORD v2 test receipts
 
 ${n} receipts from the CORD v2 test split that have a printed total (CC BY 4.0,
 [naver-clova-ix/cord-v2](https://huggingface.co/datasets/naver-clova-ix/cord-v2)), read by Gemma 4 E4B (Q4_0, llama.cpp,
-CPU only, thinking off). Reproduce: \`npx tsx eval/cord.ts\`, then \`npx tsx eval/score.ts\`.
+CPU only, thinking off). Every receipt is read twice (whole, then the totals block enlarged). Reproduce: \`npx tsx eval/cord.ts\`, then \`npx tsx eval/score.ts\`.
 
 | | receipts | |
 |---|---|---|
@@ -47,7 +47,7 @@ CPU only, thinking off). Reproduce: \`npx tsx eval/cord.ts\`, then \`npx tsx eva
 | Filed with a wrong total | ${filedWrong.length} | ${pct(filedWrong.length)} |
 | Set aside for a human ("Check me") | ${flagged.length} | ${pct(flagged.length)} |
 | ... of which the total was in fact right | ${flaggedRight.length} | |
-| Needed a second, closer look | ${second} | |
+| Both looks read the same total | ${twice} | ${pct(twice)} |
 
 Time per receipt on a Ryzen 7 9800X3D (6 threads, no GPU): median ${median.toFixed(0)} s, mean ${mean.toFixed(0)} s.
 

@@ -28,31 +28,50 @@ export async function categorize(merchant: string | null, items: string[]): Prom
   return (r.object as { category: string } | undefined)?.category ?? 'Other';
 }
 
+const norm = (s: string) => s.toLowerCase().replace(/&/g, ' and ').replace(/[^a-z]+/g, ' ').trim();
+
+/** The category the person meant ("food and drink", "Food & Drink", "food") among the eight, or the text itself. */
+function sameCategory(asked: string, filed: string): boolean {
+  const a = norm(asked);
+  const b = norm(filed);
+  return a === b || b.startsWith(a) || a.startsWith(b);
+}
+
+/** A month as YYYY-MM from "2026-10", "October 2026", "Oct 2026" or "this month". */
+function monthOf(asked: string | undefined): string | undefined {
+  if (!asked) return undefined;
+  const s = asked.trim();
+  if (/^\d{4}-\d{2}$/.test(s)) return s;
+  if (/this month|current month/i.test(s)) return new Date().toISOString().slice(0, 7);
+  const d = new Date(`1 ${s.replace(/^this\s+/i, '')}`);
+  return Number.isNaN(d.getTime()) ? s : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
 const pick = (e: Entry) => ({ date: e.date, merchant: e.merchant, category: e.category, total: e.total,
   currency: e.currency, file: e.filedAs });
 
 export function bookkeeper(folder: string) {
   const expenses = createTool({
     id: 'list-expenses',
-    description: 'List filed receipts, optionally only one month (YYYY-MM), one category or shops whose name contains a word.',
+    description: `List filed receipts, optionally only one month (YYYY-MM), one category (${CATEGORIES.join(', ')}) or shops whose name contains a word.`,
     inputSchema: z.object({ month: z.string().optional(), category: z.string().optional(), shop: z.string().optional() }),
     execute: async ({ month, category, shop }) => {
       const rows = loadLedger(folder).filter((e) => !e.flagged)
-        .filter((e) => !month || e.date.startsWith(month))
-        .filter((e) => !category || e.category.toLowerCase() === category.toLowerCase())
+        .filter((e) => !month || e.date.startsWith(monthOf(month)!))
+        .filter((e) => !category || sameCategory(category, e.category))
         .filter((e) => !shop || (e.merchant ?? '').toLowerCase().includes(shop.toLowerCase()));
       return { count: rows.length, receipts: rows.slice(0, 40).map(pick) };
     },
   });
   const totals = createTool({
     id: 'totals',
-    description: 'Add up filed receipts for a month (YYYY-MM), grouped by category or by shop.',
+    description: `Add up filed receipts for a month (YYYY-MM), grouped by category (${CATEGORIES.join(', ')}) or by shop.`,
     inputSchema: z.object({ month: z.string(), by: z.enum(['category', 'shop']).default('category') }),
     execute: async ({ month, by }) => {
       const sums: Record<string, number> = {};
       let currency = '';
       for (const e of loadLedger(folder)) {
-        if (e.flagged || !e.date.startsWith(month)) continue;
+        if (e.flagged || !e.date.startsWith(monthOf(month)!)) continue;
         const k = by === 'shop' ? (e.merchant ?? 'unknown') : e.category;
         sums[k] = (sums[k] ?? 0) + e.total;
         currency = e.currency ?? currency;
@@ -72,7 +91,8 @@ export function bookkeeper(folder: string) {
     name: 'Bookkeeper',
     instructions:
       'You answer questions about a person\'s receipts. Always use the tools to get numbers; never invent or estimate ' +
-      'an amount. Answer in one or two short sentences with the amounts and the currency. Today is ' +
+      'an amount. Answer in one or two short sentences. Write amounts with thousands separators (12,500) and put the ' +
+      'currency code before them when the tool gives one; when it gives none, leave the currency out. Today is ' +
       new Date().toISOString().slice(0, 10) + '.',
     model,
     tools: { expenses, totals, waiting },

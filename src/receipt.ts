@@ -112,7 +112,7 @@ export function check(r: Copied): Check {
   return { ok: total != null && total > 0 && (cash === 'agree' || (cash === 'none' && other)), agreed, issues };
 }
 
-export const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(2));
+export const fmt = (v: number) => v.toLocaleString('en-US', { maximumFractionDigits: 2 });
 
 /** The JSON schema the model's answer must follow (llama.cpp turns it into a grammar). */
 export const COPY_SCHEMA = {
@@ -168,19 +168,48 @@ const cashAgrees = (c: Check) => c.agreed.includes('paid - change = total') || c
 export function reconcile(first: Copied, second: Totals): { copied: Copied; check: Check } {
   const t1 = amount(first.total);
   const t2 = amount(second.total);
+  // the first look with the gaps filled from the second, and the first look's lines with the second look's totals
+  const filled: Copied = { ...first };
+  for (const k of TOTAL_FIELDS) if (filled[k] == null && second[k] != null) filled[k] = second[k];
+  const theirs: Copied = { ...filled };
+  for (const k of TOTAL_FIELDS) if (second[k] != null) theirs[k] = second[k];
   if (t1 != null && t2 != null && close(t1, t2)) {
-    const merged: Copied = { ...first };
-    for (const k of TOTAL_FIELDS) if (merged[k] == null && second[k] != null) merged[k] = second[k];
-    const c = check(merged);
-    return { copied: merged, check: { ...c, agreed: ['read twice', ...c.agreed] } };
+    // read twice: the total stands if either look's figures confirm it
+    const options = [filled, theirs].map((c) => ({ copied: c, check: check(c) }));
+    const best = options.find((o) => o.check.ok) ?? options[0];
+    return { copied: best.copied, check: { ...best.check, agreed: ['read twice', ...best.check.agreed] } };
   }
-  const alt: Copied = { ...first, ...second, items: first.items };
+  if ((t1 == null) !== (t2 == null)) {
+    // one look found no total: nothing contradicts the other, but with a single reading only cash and change may confirm it
+    const c = check(filled);
+    const ok = c.ok && cashAgrees(c);
+    return { copied: filled, check: { ...c, ok, issues: ok ? c.issues : ['the total was read only once and cash and change do not confirm it', ...c.issues] } };
+  }
+  // the looks disagree: cash and change may settle it, but only if both looks read the cash and the change the same
+  const same = (a: string | null, b: string | null) => {
+    const x = amount(a);
+    const y = amount(b);
+    return (x == null && y == null) || (x != null && y != null && close(x, y));
+  };
+  const cashSeenTwice = amount(first.paid) != null && same(first.paid, second.paid) && same(first.change, second.change);
   const c1 = check(first);
-  const c2 = check(alt);
-  const pick = cashAgrees(c1) && !cashAgrees(c2) ? 1 : cashAgrees(c2) && !cashAgrees(c1) ? 2 : 0;
+  const c2 = check(theirs);
+  const pick = !cashSeenTwice ? 0 : cashAgrees(c1) && !cashAgrees(c2) ? 1 : cashAgrees(c2) && !cashAgrees(c1) ? 2 : 0;
   const note = `the two readings of the total disagree (${t1 == null ? 'none' : fmt(t1)} and ${t2 == null ? 'none' : fmt(t2)})`;
   if (pick === 1) return { copied: first, check: { ...c1, issues: [note + '; cash and change settled it', ...c1.issues] } };
-  if (pick === 2) return { copied: alt, check: { ...c2, issues: [note + '; cash and change settled it', ...c2.issues] } };
-  const base = c1.agreed.length >= c2.agreed.length ? { copied: first, c: c1 } : { copied: alt, c: c2 };
+  if (pick === 2) return { copied: theirs, check: { ...c2, issues: [note + '; cash and change settled it', ...c2.issues] } };
+  const base = c1.agreed.length >= c2.agreed.length ? { copied: first, c: c1 } : { copied: theirs, c: c2 };
   return { copied: base.copied, check: { ok: false, agreed: base.c.agreed, issues: [note, ...base.c.issues] } };
+}
+
+const SIGNS: [RegExp, string][] = [[/\bRp\b|Rp\.?\s?\d|IDR/i, 'IDR'], [/US\$|\bUSD\b|^\s*\$/i, 'USD'], [/€|\bEUR\b/i, 'EUR'],
+  [/£|\bGBP\b/i, 'GBP'], [/¥|\bJPY\b|\bRMB\b|\bCNY\b/i, 'JPY/CNY'], [/₹|\bINR\b|\bRs\.?/i, 'INR'], [/\bRM\s?\d|\bMYR\b/i, 'MYR'],
+  [/S\$|\bSGD\b/i, 'SGD'], [/₱|\bPHP\b/i, 'PHP'], [/฿|\bTHB\b/i, 'THB'], [/₫|\bVND\b/i, 'VND']];
+
+/** The currency a receipt is in: what the model said, else the sign printed beside the amounts, else null. */
+export function currencyOf(r: Copied): string | null {
+  if (r.currency && /^[A-Z]{3}$/.test(r.currency.trim())) return r.currency.trim();
+  const texts = [r.total, r.subtotal, r.paid, r.change, r.currency, ...r.items.map((l) => l.amount)].filter(Boolean).join(' ');
+  for (const [re, code] of SIGNS) if (re.test(texts)) return code;
+  return null;
 }
